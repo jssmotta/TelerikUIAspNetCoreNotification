@@ -1,0 +1,293 @@
+﻿@page
+@model IndexModel
+@using TelerikAspNetCoreApp1.Data.Models
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+
+@Html.AntiForgeryToken()
+@{
+    ViewData["Title"] = "Overview";
+    Layout = "/Pages/Shared/_AppLayout.cshtml";
+
+
+}
+
+<div class="k-d-flex-col k-justify-content-center">
+    <div class="greeting">
+        Hello Again, @HttpContext.User.FindFirst(c => c.Type == "Name")?.Value!
+    </div>
+    
+    <script id="tasks-ontrack-template" type="text/html">
+        <div style="font-size: 84px; line-height: 101px; color: \\#37B400">22</div>
+        <div class="k-card-title">In Backlog: 43</div>
+    </script>
+    <script id="overdue-tasks-template" type="text/html">
+        <div style="font-size: 84px; line-height: 101px; color: \\#F31700">7</div>
+        <div class="k-card-title">From Yesterday: 16</div>
+    </script>
+    <script id="issues-template" type="text/html">
+        <div style="font-size: 84px; line-height: 101px; color: \\#FFC000">47</div>
+        <div class="k-card-title">Closed By Team: 15</div>
+    </script>
+    <script id="used-space-template" type="text/html">
+        <div>
+            <kendo-arcgauge name="gauge" value="50" center-template="<span style='color:\\\\#0058E9;font-size:28px;font-weight: bold;'>\\#:value\\#%</span>" style="height:80px;" color="\\#0058E9" is-in-client-template="true">
+                <scale min="0" max="100">
+                </scale>
+            </kendo-arcgauge>
+        </div>
+        <div class="k-card-title">25 of 50GB Used</div>
+    </script>
+
+    <script id="total-points-header-template" type="text/html">
+        <span class="k-card-title">Sales</span>
+        <span class="k-scheduler-navigation k-button-group"><button class="k-button k-button-solid k-button-md k-button-rectangle k-rounded-md k-button-solid-base k-nav-today" title="Today"><span class="k-button-text">Today</span></button><button class="k-button k-button-solid k-button-md k-button-rectangle k-rounded-md k-button-solid-base k-icon-button k-nav-prev" title="Previous" aria-label="Previous"><span class="k-icon k-i-arrow-60-left"></span></button><button class="k-button k-button-solid k-button-md k-button-rectangle k-rounded-md k-button-solid-base k-icon-button k-nav-next" title="Next" aria-label="Next"><span class="k-icon k-i-arrow-60-right"></span></button></span>
+        <span><span class="k-icon k-i-calendar"></span><span>@DateTime.Now.ToLongDateString()</span></span>
+        <span class="k-spacer k-toolbar-spacer"></span>
+        <kendo-buttongroup name="total-points-header-options" is-in-client-template="true" style="float:right" on-select="onChartChange">
+            <buttongroup-items>
+                <item text="Revenue" html-attributes='new Dictionary<string, object>{ ["class"] = "k-primary" }'></item>
+                <item text="Sales Count"></item>
+            </buttongroup-items>
+        </kendo-buttongroup>
+    </script>
+
+    <script id="total-points-template" type="text/html">
+        <div style="width:100%;">
+            <kendo-chart name="chart" is-in-client-template="true">
+                <chart-legend position="ChartLegendPosition.Bottom" align="ChartLegendAlign.Center">
+                    <labels><chart-legend-labels-margin right="200" /></labels>
+                </chart-legend>
+                <chart-area background="transparent"></chart-area>
+                <series-defaults type="ChartSeriesType.Line"></series-defaults>
+                <datasource>
+                    <transport>
+                        <read url="@Url.Page("Index","GetSales")" data="onAdditionalChartData" type="POST" />
+                    </transport>
+                    <schema>
+                        <model>
+                            <fields>
+                                <field name="Region" type="string"></field>
+                                <field name="Date" type="date"></field>
+                                <field name="Sum" type="number"></field>
+                            </fields>
+                        </model>
+                    </schema>
+                    <groups>
+                        <group field="Region"></group>
+                    </groups>
+                </datasource>
+                <series>
+                    <series-item style="ChartSeriesStyle.Normal" category-field="Date" field="Sum">
+                    </series-item>
+                </series>
+
+                <category-axis>
+                    <category-axis-item field="Date">
+                        <labels format="MMM">
+                        </labels>
+                    </category-axis-item>
+                </category-axis>
+
+                <value-axis>
+                    <value-axis-item type="numeric">
+                        <labels template="\\#return getTemplate(value)\\#"></labels>
+                    </value-axis-item>
+                </value-axis>
+            </kendo-chart>
+        </div>
+    </script>
+
+    <script id="mk-team-header-template" type="text/html">
+        <span class="k-card-title">All Employees</span>
+        <span class="k-spacer k-toolbar-spacer"></span>
+        <kendo-buttongroup name="mk-team-header-options" is-in-client-template="true" style="float:right" on-select="buttonGroupSelectHandler">
+            <buttongroup-items>
+                <item text="My Team" html-attributes='new Dictionary<string, object>{ ["class"] = "k-primary" }'></item>
+                <item text="All Teams"></item>
+            </buttongroup-items>
+        </kendo-buttongroup>
+    </script>
+
+    <script id="mk-team-template" type="text/html">
+        <kendo-grid name="grid" height="650" is-in-client-template="true" on-data-bound="onDataBound">
+            <columns>
+                <column selectable="true" width="50"></column>
+                <column title="Employee">
+                    <columns>
+                        <column field="FullName" title="Contact Name" template="<span class='k-avatar k-avatar-circle k-avatar-image k-avatar-sm'><img src='@Url.Content("../assets/employees/\\#= getId(Id)\\#.jpg")'/></span> \\#=FullName\\#"></column>
+                        <column field="JobTitle" title="Job title"></column>
+                    </columns>
+                </column>
+                <column title="Performance">
+                    <columns>
+                        <column field="Rating" html-attributes='new Dictionary<string, object>{ ["style"] = "text-align:center" }' template="<input id='rating_\\#=Id\\#' class='ratingInGrid' />"></column>
+                        <column field="Budget" format="{0:c}" template="\\#= getBudgetTemplate(data)\\#"></column>
+                    </columns>
+                </column>
+            </columns>
+            <toolbar>
+                <toolbar-button name="search"></toolbar-button>
+                <toolbar-button name="excel"></toolbar-button>
+                <toolbar-button name="pdf"></toolbar-button>
+            </toolbar>
+            <search fields='new string[]{"FullName","JobTitle"}' />
+            <sortable enabled="true" />
+            <pageable enabled="true" button-count="5" input="true" />
+            <groupable enabled="true" />
+            <scrollable enabled="true" />
+            <datasource type="DataSourceTagHelperType.Ajax" page-size="7">
+                <transport>
+                    <read url="@Url.Page("Index", "Read")" data="onAdditionalData" />
+                </transport>
+            </datasource>
+        </kendo-grid>
+    </script>
+
+    <kendo-tilelayout name="dashboard-tilelayout" columns="4" resizable="true" reorderable="true" columns-width="25%" rows-height="230px" on-resize="onTileResize">
+        <containers>
+            <container body-template-id="tasks-ontrack-template" col-span="1" row-span="1">
+                <container-header template="<span class=k-card-title>Tasks On Track</span><span style='float:right' class='k-icon k-i-more-vertical'></span>" />
+            </container>
+            <container body-template-id="overdue-tasks-template" col-span="1" row-span="1">
+                <container-header template="<span class=k-card-title>Overdue Tasks</span><span style='float:right' class='k-icon k-i-more-vertical'></span>" />
+            </container>
+            <container body-template-id="issues-template" col-span="1" row-span="1">
+                <container-header template="<span class=k-card-title>Issues</span><span style='float:right' class='k-icon k-i-more-vertical'></span>" />
+            </container>
+            <container body-template-id="used-space-template" col-span="1" row-span="1">
+                <container-header template="<span class=k-card-title>Used Space</span><span style='float:right' class='k-icon k-i-more-vertical'></span>" />
+            </container>
+            <container body-template-id="total-points-template" col-span="4" row-span="2">
+                <container-header template-id="total-points-header-template" />
+            </container>
+            <container body-template-id="mk-team-template" col-span="4" row-span="3">
+                <container-header template-id="mk-team-header-template" />
+            </container>
+        </containers>
+    </kendo-tilelayout>
+</div>
+
+<script>
+    
+    function getTemplate(value) {
+        var selectedOption = $('#total-points-header-options').getKendoButtonGroup().current().index();
+        if (selectedOption != 1) {
+            return kendo.toString(value, "c")
+        }
+        else return kendo.toString(value, "n0")
+    }
+    function onChartChange(e) {
+        e.sender.element.children().removeClass('k-primary');
+        $(e.sender.element.children()[e.indices]).addClass('k-primary');
+        $("#chart").getKendoChart().dataSource.read();
+
+    }
+    function buttonGroupSelectHandler(e) {
+        e.sender.element.children().removeClass('k-primary');
+        $(e.sender.element.children()[e.indices]).addClass('k-primary');
+        $("#grid").getKendoGrid().dataSource.read();
+    }
+
+    function onAdditionalChartData() {
+        var selectedOption = $('#total-points-header-options').getKendoButtonGroup().current().index();
+        return {
+            __RequestVerificationToken: forgeryToken().__RequestVerificationToken,
+            type: selectedOption
+        }
+    }
+
+    function onAdditionalData() {
+        var selectedTeam = $('#mk-team-header-options').getKendoButtonGroup().current().index();
+        return {
+            __RequestVerificationToken: forgeryToken().__RequestVerificationToken,
+            team: selectedTeam
+        }
+    }
+    function getBudgetTemplate(dataItem) {
+        if (dataItem.Budget < 0) {
+            return '<span class="negativeBudget">-' + kendo.format("{0:c}", Math.abs(dataItem.Budget)) + '</span>';
+        }
+        else return kendo.format("{0:c}", dataItem.Budget)
+    }
+    function onTileResize(e) {
+        // for widgets that do not auto resize
+        // https://docs.telerik.com/kendo-ui/styles-and-layout/using-kendo-in-responsive-web-pages
+        kendo.resize(e.container, true);
+    }
+    function onDataBound(e) {
+        var items = e.sender.items();
+        items.each((item, element) => createRating(item, element))
+    }
+
+    function createRating(item, element) {
+        var grid = $("#grid").getKendoGrid();
+        var dataItem = grid.dataItem(element);
+        var rating = $(element).find('.ratingInGrid');
+        rating.kendoRating({
+            min: 1,
+            max: 5,
+            value: dataItem.Rating,
+            label: false,
+            enabled: false
+        });
+    }
+
+    function getId(id) {
+        return (id % 9) + 1
+    }
+
+    function forgeryToken() {
+        return kendo.antiForgeryTokens();
+    }
+    function resizeWidgets() {
+        $("#chart").getKendoChart().resize()
+        $("#grid").getKendoGrid().resize(true)
+    }
+
+    $(document).ready(function () {
+        resizeWidgets()
+
+        $(window).resize(function () {
+            resizeWidgets()
+        })
+    })
+</script>
+<style>
+    .negativeBudget {
+        color: #FF6358;
+    }
+
+    .k-tilelayout-item-body.k-card-body:nth-child(-n+4) {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #dashboard-tilelayout .k-card-header {
+        border-style: none;
+    }
+
+    .k-card-title {
+        font-size: 20px;
+    }
+
+    .greeting {
+        font-weight: 300;
+        font-size: 28px;
+        line-height: 37px;
+        padding: 16px;
+    }
+
+    @@media (max-width: 716px) {
+        #dashboard-tilelayout div.k-tilelayout-item:nth-child(-n + 4) {
+            grid-column-end: span 4 !important;
+        }
+    }
+
+    @@media (min-width: 717px) and (max-width: 1065px) {
+        #dashboard-tilelayout div.k-tilelayout-item:nth-child(-n + 4) {
+            grid-column-end: span 2 !important;
+        }
+    }
+</style>

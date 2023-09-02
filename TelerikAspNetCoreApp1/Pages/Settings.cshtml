@@ -1,0 +1,158 @@
+﻿@page
+@model TelerikAspNetCoreApp1.Pages.SettingsModel
+@{
+    ViewData["Title"] = "Settings";
+    Layout = "/Pages/Shared/_AppLayout.cshtml";
+}
+<script id="info-template" type="text/html">
+    <div class="k-d-flex-col">
+        <div class="k-align-items-start">
+            <kendo-button name="account-button" icon="user" theme-color="ThemeColor.Primary" fill-mode="ButtonFillMode.Solid" class="k-selected" is-in-client-template="true">Account</kendo-button>
+            <kendo-button name="security-button" icon="lock" theme-color="ThemeColor.Secondary" fill-mode="ButtonFillMode.Solid" is-in-client-template="true">Security</kendo-button>
+            <kendo-button name="billing-button" icon="file-txt" theme-color="ThemeColor.Secondary" fill-mode="ButtonFillMode.Solid" is-in-client-template="true">Billing</kendo-button>
+            <kendo-button name="notification-button" icon="notification" theme-color="ThemeColor.Secondary" fill-mode="ButtonFillMode.Solid" is-in-client-template="true">Notifications</kendo-button>
+            <div class="k-separator">&nbsp;</div>
+        </div>
+        <div class="k-d-flex-row k-justify-content-around">
+            <div class="k-icon k-i-user" style="font-size:2em;"></div>
+            @(Html.Kendo().Form<SettingsModel.UserDetailsModel>().Name("UserDetailsForm")
+                    .Layout("grid")
+                    .FormData(Model.UserDetails)
+                    .Validatable(v =>
+                        {
+                            v.ValidateOnBlur(false);
+                            v.ValidationSummary(vs => vs.Enable(false));
+                        })
+                    .HtmlAttributes(new { method = "POST", style = "width: 90%;" })
+                    .Grid(g => g.Cols(2).Gutter(20))
+                    .Items(items => {
+                        items.Add().Field(f => f.Username).Label("Username");
+                        items.Add().Field(f => f.Email).Label("Email Address");
+                        items.Add().Field(f => f.Nickname).Label("Nickname");
+                        items.Add().Field(f => f.Phone).Label("Phone Number")
+                            .Editor(e=>e.MaskedTextBox().Mask("(+9) 0000-000-00-00"));
+                    })
+                    .ButtonsTemplate(" ")
+                    .ToClientTemplate()
+                )
+        </div>
+        <div class="k-d-flex-row k-justify-content-around">
+            <div class="k-icon k-i-information" style="font-size:2em;"></div>
+            @(Html.Kendo().Form<SettingsModel.UserInformationModel>().Name("UserInformationForm")
+                    .Layout("grid")
+                    .FormData(Model.UserInformation)
+                    .Validatable(v =>
+                        {
+                            v.ValidateOnBlur(false);
+                            v.ValidationSummary(vs => vs.Enable(false));
+                        })
+                    .HtmlAttributes(new { method = "POST", style = "width: 90%;" })
+                    .Grid(g => g.Cols(2).Gutter(20))
+                    .Items(items => {
+                        items.Add().Field(f => f.BirthDate).Editor(e=>e.DateInput().Format("{0:MM|dd|yy}")).Label("Birth Date");
+                        items.Add().Field(f => f.Country).Label("Country").Editor(e=>e.DropDownList()
+                              .DataTextField("Text")
+                              .DataValueField("Value")
+                              .BindTo(new List<SelectListItem>() {
+                                  new SelectListItem() {
+                                      Text = "USA",
+                                      Value = "1"
+                                  },
+                                  new SelectListItem() {
+                                      Text = "United Kingdom",
+                                      Value = "2"
+                                  },
+                                  new SelectListItem() {
+                                      Text = "Bulgaria",
+                                      Value = "3"
+                                  }
+                              })
+                        );
+                        items.Add().Field(f => f.Website).Label("Website");
+                        items.Add().Field(f => f.WorkPhone).Label("Phone Number")
+                            .Editor(e=>e.MaskedTextBox().Mask("(+9) 0000-000-00-00"));
+                    })
+                    .ButtonsTemplateId("formButtons")
+                    .ToClientTemplate()
+                )
+        </div>
+    </div>
+</script>
+
+<script id="formButtons" type="text/html">
+    <div>
+        <input data-role="switch" data-checked="true"/> Public Profile
+    </div>
+    <button class="k-button k-button-md k-rounded-md k-button-solid-primary k-form-submit k-disabled" type="submit">Save Changes</button>
+</script>
+
+<script id="date-template" type="text/html">
+    <div style="display:flex; justify-content:center; flex-direction:row; align-content:center">
+        <kendo-calendar name="calendar" component-type="modern" week-number="true" is-in-client-template="true"></kendo-calendar>
+    </div>
+</script>
+
+<script id="weather-header-template" type="text/html">
+    <span class="k-card-title">Weather</span>
+    <span class="k-spacer k-toolbar-spacer"></span>
+    <a class="k-card-title k-link" style="float: right;"><span class="k-icon k-i-globe" style="margin-right:9px;"></span><span>Sofia</span></a>
+</script>
+
+<script id="weather-template" type="text/html">
+    <div class="k-d-flex-col k-align-items-center k-justify-content-around">
+        <div style="width: 100px; height: 100px; background-image: url(../assets/settings/cloud.svg)"></div>
+        <div class="k-state-disabled">Partly Cloudy</div>
+        <div style="font-family: 'Roboto'; font-size: 70px; line-height: 84px;">12 &\\#176;C</div>
+    </div>
+    <div class="k-card-footer">
+        <div class="weather-data-container k-d-flex-row k-align-items-center k-justify-content-center">
+            <div>
+                Humidity:<br>
+                Dew:<br>
+                Pressure:<br>
+                Wind Speed:
+            </div>
+            <div>
+                76%<br>
+                2˚C<br>
+                1031mb<br>
+                12km/h NW
+            </div>
+        </div>
+    </div>
+</script>
+
+<kendo-tilelayout name="settings" columns="3" resizable="true" reorderable="true" columns-width="33%" rows-height="400px">
+    <containers>
+        <container body-template-id="info-template" col-span="2" row-span="2">
+        </container>
+        <container body-template-id="date-template" col-span="1" row-span="1">
+            <container-header template='<span class="k-card-title">Date</span>' />
+        </container>
+        <container body-template-id="weather-template" col-span="1" row-span="1">
+            <container-header template-id="weather-header-template" />
+        </container>
+    </containers>
+</kendo-tilelayout>
+<style>
+    #settings .k-card-header {
+        border-style: none;
+    }
+    .weather-data-container {
+        padding: 8px 0px 0px;
+        gap: 18px
+    }
+    .weather-data-container > div {
+        font-style: normal;
+        font-weight: normal;
+        font-size: 12px;
+        line-height: 16px;
+    }
+    .weather-data-container > div:nth-child(1) {
+        font-weight: bold;
+        text-align: right;
+    }
+    #UserInformationForm > div.k-form-buttons{
+        justify-content:space-between;
+    }
+</style>

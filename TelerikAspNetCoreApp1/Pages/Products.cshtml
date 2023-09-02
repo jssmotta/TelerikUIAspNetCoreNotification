@@ -1,0 +1,269 @@
+﻿@page
+@model TelerikAspNetCoreApp1.Pages.ProductsModel
+@{
+    ViewData["Title"] = "Products";
+    Layout = "/Pages/Shared/_AppLayout.cshtml";
+}
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@Html.AntiForgeryToken()
+
+
+<script id="revenue-rating-template" type="text/html">
+    <kendo-chart name="revenue-rating-chart" is-in-client-template="true"  style="height:350px;">
+        <chart-title text="Revenue per Product Type" position="ChartTitlePosition.Top" align="ChartTextAlignment.Left" font="font-family: Roboto; font-style: normal; font-weight: normal; font-size: 20px;"></chart-title>
+        <chart-legend visible="true" position="ChartLegendPosition.Bottom">
+            <labels>
+                <chart-legend-labels-margin right="200" />
+            </labels>
+        </chart-legend>
+        <chart-area background="transparent"></chart-area>
+        <series-defaults type="ChartSeriesType.Bubble"></series-defaults>
+        <datasource>
+            <transport>
+                <read url="@Url.Page("Products","PerformanceData")" data="forgeryToken" type="POST" />
+            </transport>
+            <schema>
+                <model>
+                    <fields>
+                        <field name="Product" type="string"></field>
+                        <field name="Region" type="string"></field>
+                        <field name="Amount" type="number"></field>
+                    </fields>
+                </model>
+            </schema>
+            <groups>
+                <group field="Region"></group>
+            </groups>
+        </datasource>
+        <y-axis>
+            <y-axis-item>
+                <labels format="{0:n}"></labels>
+            </y-axis-item>
+        </y-axis>
+        <x-axis>
+            <x-axis-item>
+                <labels format="{0:c}"></labels>
+            </x-axis-item>
+        </x-axis>
+        <series>
+            <series-item x-field="Amount" y-field="SalesCount" size-field="Rate" category-field="Product">
+            </series-item>
+        </series>
+        <tooltip visible="true" template="\\#=dataItem.Region\\# : \\#=dataItem.Product\\# Sales : \\#=kendo.toString(dataItem.Amount,'c')\\#"></tooltip>
+
+    </kendo-chart>
+</script>
+
+<script type="text/html" id="cardTemplate">
+    <div class="k-card" style="width:260px; height:340px;">
+        <img class="k-card-image" src="@Url.Content("~/assets/products/")#= (ProductID % 9) + 1 #.png" />
+        <div class="k-card-body">
+            <div class="k-card-title">#= Title #</div>
+            <div class="k-card-subtitle">#= Description #</div>
+        </div>
+        <div class="k-card-footer">
+            <div class="k-d-flex-col k-align-items-center">
+                <span>
+                    <span class="k-button k-button-md k-button-rectangle k-button-solid-secondary" onclick="review()"><span class="k-icon k-button-icon k-i-preview"></span>Review</span>
+                </span>
+                <span>
+                    <span class="k-edit-button k-button k-button-md k-button-rectangle k-button-solid-primary"><span class="k-icon k-i-edit"></span>Edit</span>
+                </span>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/html" id="previewTemplate">
+    <div id="previewItem_#=ProductID#" class="k-card" style="width:260px; height:360px;">
+        <img class="k-card-image" src="@Url.Content("~/assets/products/")#= (ProductID % 9) + 1 #.png" />
+        <div class="k-card-body">
+            <div class="k-card-title">#= Title #</div>
+            <div class="k-card-subtitle">#= Description #</div>
+        </div>
+    </div>
+</script>
+
+<script type="text/html" id="editTemplate">
+        <div id="item_#=ProductID#" class="k-card" style="width:260px; height:420px;">
+        <img class="k-card-image" src="@Url.Content("~/assets/products/")#= (ProductID % 9) + 1 #.png" />
+        <div class="k-card-body">
+            <div class="k-card-title"><input data-role="textbox" data-bind="value: Title" name="Title" style="width: 100%;" /></div>
+            <div class="k-card-subtitle"><textarea data-role="textarea" data-rows="3" data-bind="value: Description" name="Description" style="width: 100%;" /></div>
+        </div>
+        <div class="k-card-footer">
+            <div class="k-d-flex-col k-align-items-center">
+                <span class="k-button k-button-md k-rounded-md k-button-solid-secondary k-cancel-button" onclick="cancelItem()"><span class="k-icon k-i-cancel"></span>Cancel</span>
+                <span class="k-button k-button-md k-rounded-md k-button-solid-primary k-update-button" onclick="saveItem()"><span class="k-icon k-i-check"></span>Save</span>
+                <span class="k-button k-button-md k-rounded-md k-button-solid-base k-delete-button" onclick="deleteItem('#=ProductID#')"><span>Delete</span></span>
+            </div>
+        </div>
+    </div>
+
+</script>
+
+<script id="products-template" type="text/html" style="background-color: #FAFAFA">
+    <div class="k-d-flex-row k-justify-content-center k-align-content-center" style="margin-bottom:45px;">
+        <input id="search" class="k-input" name="search" placeholder="Product Search" style="width:40%;" />
+    </div>
+    <div>
+        <div id="listView"></div>
+        <div id="pager"></div>
+    </div>
+
+</script>
+
+
+
+<kendo-tilelayout name="tilelayout" columns="1" resizable="true" reorderable="true" columns-width="100%" rows-height="420px" on-resize="onTileResize">
+    <containers>
+        <container body-template-id="revenue-rating-template" col-span="1" row-span="1">
+        </container>
+        <container body-template-id="products-template" col-span="1" row-span="3">
+        </container>
+    </containers>
+</kendo-tilelayout>
+<div id="review"></div>
+<kendo-notification name="notification" auto-hide-after="120000">
+    <position top="120" left="20"></position>
+</kendo-notification>
+
+ 
+
+<style>
+    span[title="unknown"] { display: none !important; }
+
+    .k-notification-unknown { color: white !important; background-color: #ff6633 !important; }
+
+    #listView > .k-listview-content { display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 32px; max-height: 1100px; }
+
+    .k-card-image { width: 100%; /*height: 111px;*/ }
+
+    .k-card-title { font-style: normal; font-weight: normal; font-size: 18px; line-height: 20px; }
+
+    .k-card-subtitle { font-style: normal; font-weight: normal; font-size: 14px; line-height: 17px; }
+
+    .k-tilelayout-item.k-card:nth-child(2) { border: none; background: inherit; }
+
+    .k-listview { background: inherit; border: none; }
+</style>
+<script>
+    function review() {
+        var listView = $("#listView").getKendoListView();
+        var dataItem = listView.dataItem($(event.target).closest('.k-card'))
+        var reviewWindow = $("#review").getKendoWindow();
+        if (!reviewWindow) {
+            reviewWindow = $("#review").kendoWindow({
+                actions: [
+                    "Close"
+                ],
+                visible: false,
+                title: dataItem.Title,
+            }).getKendoWindow();
+        }
+        var windowContent = kendo.template($("#previewTemplate").html());
+        reviewWindow.center().open().content(windowContent(dataItem));
+
+    }
+
+    function onSearchInput(e) {
+        console.log(e)
+    }
+    function forgeryToken() {
+        return kendo.antiForgeryTokens();
+    }
+    function onTileResize(e) {
+        // for widgets that do not auto resize
+        // https://docs.telerik.com/kendo-ui/styles-and-layout/using-kendo-in-responsive-web-pages
+        kendo.resize(e.container, true);
+    }
+
+    function resizeWidgets() {
+        $("#revenue-rating-chart").getKendoChart().resize()
+    }
+
+    $(document).ready(function () {
+        resizeWidgets()
+
+        $(window).resize(function () {
+            resizeWidgets()
+        })
+
+        $("#search").on("change keyup", function () {
+            var input = $(this).val();
+            var listView = $("#listView").getKendoListView();
+            listView.dataSource.filter({
+                field: "Title",
+                operator: "contains",
+                value: input
+            });
+        })
+
+        var dataSource = new kendo.data.DataSource({
+            transport: {
+                read: {
+                    url: "@Url.Page("Products","Products")",
+                    type: "POST",
+                    data: forgeryToken,
+                    dataType: "json"
+                }
+            },
+            pageSize: 8
+        });
+
+        $("#pager").kendoPager({
+            dataSource: dataSource,
+            buttonCount: 5,
+            input: true,
+            refresh: true,
+        });
+
+        $("#listView").kendoListView({
+            dataSource: dataSource,
+            template: kendo.template($("#cardTemplate").html()),
+            editTemplate: kendo.template($("#editTemplate").html()), 
+        });
+
+    })
+
+    function deleteItem(key) {
+        
+        if (key == "2") {
+            showNotification("Error while deleteing!", "error");
+            return;
+        }
+        if (key == "3") {
+            showNotification("You can delete one item each 10 minutes!", "warning");
+            return;
+        }
+
+        $("#item_" + key).remove();
+        $("#previewItem_" + key).remove();
+
+        showNotification("Item deleted successfully!");
+    }
+
+    function cancelItem() { 
+        showNotification("Edition cancelled!", "info");
+    }
+
+    function saveItem() {
+        showNotification("Item saved successfully!");
+    }
+
+    function showNotification(message, typeMessage)
+    {
+        if (typeMessage == undefined) typeMessage = "success";
+        var notification = $("#notification").data("kendoNotification");
+        notification.show(message, typeMessage,);        
+    }
+
+    $(document).ready(function () {                
+        showNotification("Starting connection...", "unknown");
+        showNotification("Loading types...", "unknown");
+        showNotification("Writing data...", "unknown");
+        showNotification("Closing connection...", "unknown");
+        showNotification("Commands successfully completed!");
+    });
+
+</script>

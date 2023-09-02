@@ -1,0 +1,94 @@
+﻿@{
+    Layout = "/Pages/Shared/_Layout.cshtml";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{ var itemStyle = "";
+    if ((string)ViewData["Title"] != "Overview")
+    {
+        itemStyle = "display:none";
+    } }
+
+<kendo-drawer name="drawer" mode="push" width="240" position="left" template-id="drawerTemplate" navigatable="true" auto-collapse="false">
+    <mini enabled="false" />
+    <content>
+        <div>
+            <main role="main" class="k-content">
+                <kendo-appbar name="appbar" theme-color="AppBarThemeColor.Inherit" style="height:48px;">
+                    <items>
+                        <appbar-item type="AppBarItemType.ContentItem" template="<a id='menuIcon' class='k-button k-button-md k-button-rectangle k-rounded-md k-button-solid k-button-solid-base' style='border:0px; background:\\#FFFFFF;' href='\\#'><span class='k-icon k-i-menu'></span></a>"></appbar-item>
+                        <appbar-item type="AppBarItemType.Spacer" width="16px"></appbar-item>
+                        <appbar-item type="AppBarItemType.ContentItem" template="<div class='title'>@ViewData["Title"]</div>"></appbar-item>
+                        <appbar-item type="AppBarItemType.Spacer"></appbar-item>
+                        <appbar-item type="AppBarItemType.ContentItem" template="<div class='app-bar-link'><span class='k-icon k-i-notification'><span data-role='badge' class='k-badge k-badge-solid k-badge-error k-badge-md k-badge-dot k-badge-outside k-top-end'></span></span></div>"></appbar-item>
+                        <appbar-item type="AppBarItemType.Spacer" width="8px"></appbar-item>
+                        <appbar-item type="AppBarItemType.ContentItem" template="<a href='@Url.Page("About")' class='k-link app-bar-link'>About</a>"></appbar-item>
+                        <appbar-item type="AppBarItemType.ContentItem" template="<div style='@itemStyle' class='app-bar-link'>Contacts</div>"></appbar-item>
+                    </items>
+                </kendo-appbar>
+                @RenderBody()
+            </main>
+        </div>
+    </content>
+</kendo-drawer>
+<script id="drawerTemplate" type="text/html">
+    <div class="k-d-flex-col k-align-items-center k-justify-content-evenly" style="height:218px;">
+        <div class="k-avatar k-avatar-circle k-avatar-image k-avatar-lg" id="avatar"><img src='@Url.Content("~/assets/navigation/Avatar.svg")' /></div>
+        <div id="name">@HttpContextAccessor.HttpContext.User.FindFirst(c => c.Type == "Name")?.Value</div>
+        <div id="email">@HttpContextAccessor.HttpContext.User.FindFirst(c => c.Type == "Email")?.Value</div>
+
+        <form class="form-inline" asp-area="Login" asp-page="/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
+            <button type="submit" class="k-button k-button-md k-rounded-md k-button-solid-secondary k-selected">Logout</button>
+        </form>
+    </div>
+    <ul>
+        <li><a class="k-link" data-role='drawer-item' asp-page="Index"><span class="k-icon k-i-grid "></span>Dashboard</a></li>
+        <li><a class="k-link" data-role='drawer-item' asp-page="Performance"><span class="k-icon k-i-globe"></span>Performance and Sales</a></li>
+        <li><a class="k-link" data-role='drawer-item' asp-page="Products"><span class="k-icon k-i-aggregate-fields"></span>Products</a></li>
+        <li data-role='drawer-separator'></li>
+        <li><a class="k-link" data-role='drawer-item' asp-page="Settings"><span class="k-icon k-i-gear"></span>Settings</a></li>
+    </ul>
+</script>
+
+<style>
+    #name {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    #email {
+        font-size: 12px;
+        text-decoration-line: underline;
+    }
+
+    .title {
+        font-size: 18px;
+        line-height: 20px;
+    }
+
+    .app-bar-link {
+        font-size: 14px;
+        line-height: 20px;
+        cursor: pointer;
+    }
+
+    .k-drawer-container {
+        background: inherit;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+        $("#menuIcon").click(function () {
+            var drawerInstance = $("#drawer").data("kendoDrawer");
+            var drawerContainer = drawerInstance.drawerContainer;
+            if (drawerContainer.hasClass("k-drawer-expanded")) {
+                drawerInstance.hide();
+            } else {
+                drawerInstance.show();
+            };
+            setTimeout(function () {
+                kendo.resize($(".k-chart"));
+            }, 350);
+        })
+    })
+</script>
